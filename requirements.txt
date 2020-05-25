@@ -1,0 +1,16 @@
+scikit_image==0.15.0
+scenedetect==0.5.1.1
+drawnow==0.72.0
+sk_video==1.1.10
+scipy==1.4.1
+pykalman==0.9.5
+tensorflow==2.1.0
+torch==0.4.0
+numpy==1.18.4
+python_speech_features==0.6
+matplotlib==3.1.1
+imageio==2.8.0
+protobuf==3.12.1
+PyYAML==5.3.1
+scikit_learn==0.23.1
+skimage==0.15.0

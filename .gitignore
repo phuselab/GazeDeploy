@@ -1,0 +1,10 @@
+speaker_detect/data/face_maps/012/
+speaker_detect/data/syncnet_v2.model
+speaker_detect/output/pyavi/
+speaker_detect/output/pycrop/
+speaker_detect/output/pytmp/
+speaker_detect/output/pywork/
+speaker_detect/__pycache__/
+speaker_detect/protos/
+__pycache__/
+*.pyc

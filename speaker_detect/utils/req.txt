@@ -1,0 +1,21 @@
+# This file may be used to create an environment using:
+# $ conda create --name <env> --file <this file>
+# platform: linux-64
+
+imageio=2.5.0=py36_0
+matplotlib=3.1.1=py36h5429711_0
+matplotlib-base=3.0.3=py36h5f35d83_1
+multimatch-gaze=0.1.2=pypi_0
+numpy=1.16.5=py36h99e49ec_0
+numpy-base=1.16.5=py36h2f8d375_0
+pykalman=0.9.5=py_1
+python-speech-features=0.6=pypi_0
+pytorch=0.4.0=py36hdf912b8_0
+scenedetect=0.5.1.1=pypi_0
+scikit-image=0.15.0=py36he6710b0_0
+scikit-learn=0.21.2=py36h22eb022_0
+scipy=1.4.1=pypi_0
+sk-video=1.1.10=pyh24bf2e0_4
+tensorflow=2.1.0=pypi_0
+torchvision=0.2.1=py36_0
+opencv=3.4.2=py36h6fd60c2_1
