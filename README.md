@@ -10,7 +10,7 @@
 ### Requirements
 
 ```
-requirements.txt
+pip install -r requirements.txt
 ```
 
 ### Executing the demo
