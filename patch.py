@@ -19,7 +19,7 @@ class Patch(object):
 
 	def compute_rho(self, last_patch_mu, choice):
 
-		kappa = 18
+		kappa = 15
 		distance = np.linalg.norm(last_patch_mu - self.center) / self.diag_size
 		area = 1
 		if choice:

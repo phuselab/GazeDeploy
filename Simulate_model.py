@@ -133,7 +133,7 @@ for iframe in range(nFrames):
 		                                                                                    observation_matrix=X)
 
 	beta1 = softmax(filtered_state_means[iframe])
-	beta2 = softmax(filtered_state_means[iframe]*4)
+	beta2 = softmax(filtered_state_means[iframe]*2.5)
 
 	CBValue = beta1[1]
 	CBExpVal = beta2[1]
@@ -158,7 +158,7 @@ for iframe in range(nFrames):
 	featMaps.sts.esSampleProtoParameters()
 	featMaps.sts.define_patches(stsValue, stsExpVal)
 
-	betas[iframe, :] = beta1
+	betas[iframe-start_gif, :] = beta1
 
 	#Patch Measures -------------------------------------------------------------------------------------------
 	patches = compute_patch_measures(featMaps)
@@ -232,11 +232,11 @@ for iframe in range(nFrames):
 		fig.canvas.draw()
 		image = np.frombuffer(fig.canvas.tostring_rgb(), dtype='uint8')
 		image  = image.reshape(fig.canvas.get_width_height()[::-1] + (3,))
-		#if iframe >= 100:
-		if save_GIF:
-			images.append(image)
-		#if iframe > 250:
-		#	break
+		if iframe >= 100:
+			if save_GIF:
+				images.append(image)
+		if iframe > 300:
+			break
 
 		if display:
 			plt.pause(1/25.)
