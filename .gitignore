@@ -8,3 +8,4 @@ speaker_detect/__pycache__/
 speaker_detect/protos/
 __pycache__/
 *.pyc
+*.oldgif

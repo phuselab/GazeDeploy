@@ -32,20 +32,20 @@ def sample_OU_trajectory(numOfpoints, alpha, mu, startxy, dt, sigma):
 
 class GazeSampler(object):
  
-	def __init__(self, video_fr):
+	def __init__(self, video_fr, phi, kappa):
         		
 		self.allFOA = []
 		self.sampled_gaze = []
 		self.fly = False
 		self.eps = np.finfo(np.float32).eps
-		self.beta = 35		#beta for he logistic function
-		self.alpha = 0.65  #alpha < 1 for longer fixation times
 		self.video_fr = video_fr
+		self.phi = phi
+		self.kappa = kappa
 
 # ------------------------------------------------ GAZE SAMPLING WITH FORAGING STUFF -------------------------------------------------------------------------------
 
 
-	def sample(self, iframe, patches, FOAsize, seed=None, verbose=False):
+	def sample(self, iframe, patches, FOAsize, seed=None, verbose=False, debug=False):
 
 		if seed is not None:
 			np.random.seed(seed)
@@ -71,29 +71,54 @@ class GazeSampler(object):
 			self.allFOA.append(arrivingFOA)
 			self.newFOA = arrivingFOA
 			prevFOA = arrivingFOA
-			self.t = 0
+			self.curr_fix_dur = 0
 
 		else:
 			if self.z_prev >= numPatch:
 				self.z_prev = np.random.choice(numPatch, 1, p=np.ones(numPatch)/numPatch)[0]
 			
 			curr_value = self.patch[self.z_prev].value
-			other_values = [patch.value for i,patch in enumerate(self.patch) if i!=self.z_prev]
-			Q = np.mean(other_values)				#mean value of all the other patches (Eq. 28)
-			curr_rho = self.patch[self.z_prev].compute_rho(np.array(self.patch[self.z_prev].center), False)				
+			#other_values = [patch.value for i,patch in enumerate(self.patch) if i!=self.z_prev]
+			others_rho = [patch.compute_rho(np.array(self.patch[self.z_prev].center), False, self.kappa) for i,patch in enumerate(self.patch) if i!=self.z_prev]
+			#other_values = [patch.expect for i,patch in enumerate(self.patch)]
+			#Q = np.mean(other_values)
+			Q = np.mean(others_rho)		
+			curr_rho = self.patch[self.z_prev].compute_rho(np.array(self.patch[self.z_prev].center), False, self.kappa)														#mean value of all the other patches
 
-			A = self.alpha / (curr_value+self.eps)
-			gp = curr_rho * np.exp(-A*self.t)						#Eq. 26
-			dist = gp - Q											#distance of the current gut-f value from the average patch value
-			jump_prob = 1 - logistic(self.beta, dist)				#Eq. 29
+			A = self.phi / (curr_value+self.eps)
+			gp = curr_rho * np.exp(-A*self.curr_fix_dur)
+			dist = gp - Q																#distance of the current gut-f value from the average patch value
+			jump_prob = 1 - logistic(20, dist)
 			
-			rand_num = np.random.rand()								#for the random choice, evaluate a new jump or not (Eq. 30)
+			rand_num = np.random.rand()													#for the random choice (evaluate a new jump or not)
+			
+			if debug:
+				print('\nCurrent Values for patches:')
+				print([patch.value for patch in self.patch])
+				print('\nInstantaneous Reward Rate: ' + str(gp))
+				print('Current value for the present patch: ' + str(curr_value))
+				print('Current mean value for other patches: ' + str(Q))
+				print('Distance between threshold and GUT: ' + str(dist))
+				print('Jump Probability: ' + str(jump_prob))
+				print('Random Number: ' + str(rand_num) + '\n')
+				
+				import code
+				code.interact(local=locals())
 
 			if rand_num < jump_prob:
 				#possible saccade
-				rho = np.array([patch.compute_rho(np.array(self.patch[self.z_prev].center), True) for patch in self.patch])
+				rho = np.array([patch.compute_rho(np.array(self.patch[self.z_prev].center), True, self.kappa) for patch in self.patch])
 				pi_prob = rho / np.sum(rho)		
-				z = np.random.choice(numPatch, 1, p=pi_prob)[0]		#choose a new patch (Eq. 31)
+				z = np.random.choice(numPatch, 1, p=pi_prob)[0]	#choose a new patch
+
+				if debug:
+					print('\npi_prob: ')
+					print(pi_prob)
+					print('Choice:')
+					print(z)
+
+					import code
+					code.interact(local=locals())
 
 				rand_num2 = np.random.rand()		#for the random choice (small saccade of keep fixating)
 
@@ -116,6 +141,7 @@ class GazeSampler(object):
 				prevFOA = self.allFOA[-1]
 				self.newFOA = prevFOA
 
+		#timeOfFlight = euclidean(self.newFOA, prevFOA)
 		timeOfFlight = np.linalg.norm(self.newFOA - prevFOA)
 
 		#Possible FLY --------------------------------------------------------------------------------------------------------------------------------------------
@@ -131,13 +157,13 @@ class GazeSampler(object):
 			self.s_ampl.append(timeOfFlight)
 			curr_sdir = np.arctan2(self.newFOA[1]-prevFOA[1], self.newFOA[0]-prevFOA[0]) + np.pi
 			self.s_dir.append(curr_sdir)
-			self.fix_dur.append(self.t)
+			self.fix_dur.append(self.curr_fix_dur)
 			self.fix_pos.append(prevFOA)
-			self.t = 0
+			self.curr_fix_dur = 0
 		else:
 			self.FLY = False
 			self.SAME_PATCH = True
-			self.t += 1/self.video_fr
+			self.curr_fix_dur += 1/self.video_fr
 
 		#FEED ---------------------------------------------------------------------------------------------------------------------------------------------------
 		if self.SAME_PATCH == True and iframe > 0:
@@ -145,14 +171,21 @@ class GazeSampler(object):
 			if verbose:
 				print('\n\tSame Patch, continuing exporation...')
 			startxy = self.xylast
+			#t_patch = self.t_patchlast
 			alphap = self.alphaplast                          
 			mup = self.newFOA
+			#dtp = self.dtplast
 			sigmap = self.sigma_last
 
 		elif self.SAME_PATCH == False or iframe == 0:
 			#...init new exploitation/feed state for starting a new random walk   
 			if verbose:        
 				print('\n\tExploring new Patch...')
+			#t_patch = np.round(np.max([self.patch[z].axes[0], self.patch[z].axes[1]]))*2 #setting the length of the feeding proportional to major axis
+			#self.t_patchlast = t_patch
+			
+			#dtp = 1/t_patch             #time step
+			#self.dtplast = dtp
 				
 			if iframe == 0:
 				startxy = self.newFOA
@@ -175,4 +208,5 @@ class GazeSampler(object):
 		
 		arrivingFOA = np.round(walk[-1,:])
 		self.xylast = arrivingFOA
+		#self.muplast = mup
 		self.sampled_gaze.append(walk)

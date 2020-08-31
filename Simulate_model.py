@@ -55,7 +55,7 @@ featMaps = Feature_maps(dynmapDir, facemapDir)
 
 curr_vid_name = '012.mp4'
 scanPath = {}
-d_rate = 1.5
+d_rate = 3
 
 #Gaze -------------------------------------------------------------------------------------------------------		
 gazeObj.load_gaze_data(curr_vid_name)
@@ -68,7 +68,7 @@ FOAsize = int(np.max(videoObj.size)/10)
 featMaps.load_feature_maps(curr_vid_name, videoObj.vidHeight, videoObj.vidWidth)
 
 #Gaze Sampler -----------------------------------------------------------------------------------------------
-gazeSampler = GazeSampler(videoObj.frame_rate) 
+gazeSampler = GazeSampler(videoObj.frame_rate, 3.5, 18)  
 
 nFrames = min([len(videoObj.videoFrames), featMaps.num_sts, featMaps.num_speak, featMaps.num_nspeak])
 wd = int(videoObj.vidWidth * d_rate / 100)
@@ -247,4 +247,4 @@ for iframe in range(nFrames):
 
 #kwargs_write = {'fps':10.0, 'quantizer':'nq'}
 if save_GIF:
-	imageio.mimsave('simulation_' + curr_vid_name[:-4] + '.gif', images, fps=10)
+	imageio.mimsave('simulation_' + curr_vid_name[:-4] + '_NEW3.gif', images, fps=10)

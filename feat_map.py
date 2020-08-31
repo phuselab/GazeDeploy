@@ -7,6 +7,7 @@ from protoMap import ProtoMap
 from patch import Patch
 from skimage.draw import ellipse_perimeter, polygon
 from operator import itemgetter
+from utils import softmax
 
 class Feat_map(object):
  
@@ -24,7 +25,11 @@ class Feat_map(object):
 		return self.feat_map
 
 	def esSampleNbestProto(self, protoMap_raw, nBest, win):
+		#se = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(win,win))
+		#closing = cv2.morphologyEx(protoMap_raw, cv2.MORPH_OPEN, se)
 
+		#contours, hierarchy = cv2.findContours(cv2.convertScaleAbs(protoMap_raw),cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
+		#_, contours, hierarchy = cv2.findContours(cv2.convertScaleAbs(protoMap_raw),cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
 		contours = measure.find_contours(protoMap_raw, 0.5)
 
 		size_c = []
@@ -37,6 +42,7 @@ class Feat_map(object):
 
 		for i in range(nBest):
 			img = np.zeros(protoMap_raw.shape)
+			#cv2.fillPoly(img, pts =[contours[sort_idx[i]]], color=(255,255,255))
 			r = contours[sort_idx[i]][:,0]
 			c = contours[sort_idx[i]][:,1]
 			rr, cc = polygon(r, c)
@@ -70,7 +76,7 @@ class Feat_map(object):
 	def esSampleProtoParameters(self):
 
 		if self.name == 'STS':
-			nBestProto = 1
+			nBestProto = 2
 			M_tMap, protoMap = self.esSampleProtoMap(nBestProto)
 			feat_map_img = M_tMap*255
 		else:
@@ -80,6 +86,7 @@ class Feat_map(object):
 				feat_map_img = self.feat_map
 
 		_,thresh = cv2.threshold(cv2.convertScaleAbs(feat_map_img),0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
+		#B = cv2.findContours(cv2.convertScaleAbs(thresh), cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 		B = measure.find_contours(thresh, 128)#0.5)
 
 		if type(B).__module__ == np.__name__:
@@ -88,6 +95,7 @@ class Feat_map(object):
 		#Remove too tiny contours
 		idx_to_keep = []
 		for i,b in enumerate(B):
+			#print(b.shape)
 			if b.shape[0] >= 40:
 				idx_to_keep.append(i)
 
@@ -99,42 +107,68 @@ class Feat_map(object):
 
 		numproto = len(B)
 
-		a = {}
+		'''a = {}
 		r1 = {}
 		r2 = {}
 		cx = {}
 		cy = {}
 		theta = {}
-		boundaries = {}
+		boundaries = {}'''
+
+		a = []
+		r1 = []
+		r2 = []
+		cx = []
+		cy = []
+		theta = []
+		boundaries = []
 
 		discarded = 0
 		for p in range(numproto):
+			#boundary = np.squeeze(B[p])	#for cv2
 			boundary = np.flip(np.array(B[p]),1).astype(int)
-			boundaries[p] = boundary
+			#boundary = np.array(B[p]).astype(int)
+			#boundaries[p] = boundary
 
 			ellipse = measure.EllipseModel()
-			try:
-				ellipse.estimate(boundary)
-			except:
+			worked = ellipse.estimate(boundary)
+			if not worked:
 				boundary = np.unique(boundary, axis=0)
-				ellipse.estimate(boundary)
-			
-			a[p] = ellipse.params
+				worked = ellipse.estimate(boundary)
 
-			r1[p] = a[p][2]
-			r2[p] = a[p][3]
-			cx[p] = a[p][0]
-			cy[p] = a[p][1]
-			theta[p] = a[p][4]
+			if worked:
+				'''r1[p] = a[p][2]
+				r2[p] = a[p][3]
+				cx[p] = a[p][0]
+				cy[p] = a[p][1]
+				theta[p] = a[p][4]'''
+				e_params = ellipse.params
+				a.append(e_params)
+				r1.append(e_params[2])
+				r2.append(e_params[3])
+				cx.append(e_params[0])
+				cy.append(e_params[1])
+				theta.append(e_params[4])
+				boundaries.append(boundary)
+
+			else:
+				discarded += 1
 
 		self.numproto = numproto - discarded
-		self.boundaries = boundaries
+		'''self.boundaries = boundaries
 		self.ellipse = a
 		self.radius1 = r1
 		self.radius2 = r2
 		self.centerx = cx
 		self.centery = cy
-		self.theta = theta
+		self.theta = theta'''
+		self.boundaries = dict(zip(np.arange(self.numproto), boundaries))
+		self.ellipse = dict(zip(np.arange(self.numproto), a))
+		self.radius1 = dict(zip(np.arange(self.numproto), r1))
+		self.radius2 = dict(zip(np.arange(self.numproto), r2))
+		self.centerx = dict(zip(np.arange(self.numproto), cx))
+		self.centery = dict(zip(np.arange(self.numproto), cy))
+		self.theta = dict(zip(np.arange(self.numproto), theta))
 
 	def define_patches(self, value, expVal):
 
@@ -142,12 +176,13 @@ class Feat_map(object):
 		patches = []
 		protoMap = np.zeros(self.feat_map.shape)
 		diag_size = np.sqrt(self.feat_map.shape[0]**2 + self.feat_map.shape[1]**2)
+		total_area = self.feat_map.shape[0] * self.feat_map.shape[1]
 
 		for p in range(num_patches):
 
 			patch = Patch(self.name, p, value, expVal, self.ellipse[p], [self.centerx[p], self.centery[p]], 
 						 [self.radius1[p], self.radius2[p]], self.theta[p], np.pi * (self.radius1[p]/2) * (self.radius2[p]/2), 
-						 self.boundaries[p], diag_size)
+						 self.boundaries[p], diag_size, total_area)
 
 			patches.append(patch)
 
@@ -162,3 +197,21 @@ class Feat_map(object):
 			self.protoMap = ProtoMap(protoMap=protoMap/np.sum(protoMap), name=self.name)
 		else:
 			self.protoMap = ProtoMap(protoMap=protoMap, name=self.name)
+
+
+	def define_patchesDDM(self):
+
+		num_patches = self.numproto
+		patches = []
+
+		for p in range(num_patches):
+
+			patch = Patch(self.name, p, None, self.ellipse[p], [self.centerx[p], self.centery[p]], 
+						 [self.radius1[p], self.radius2[p]], self.theta[p], np.pi * (self.radius1[p]/2) * (self.radius2[p]/2), 
+						 self.boundaries[p])
+
+			patches.append(patch)
+
+		self.patches = patches
+
+
