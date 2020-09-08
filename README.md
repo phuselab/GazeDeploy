@@ -3,7 +3,9 @@
 ***Giuseppe Boccignone, Vittorio Cuculo¹, Alessandro D'Amelio¹, Giuliano Grossi¹, Raffaella Lanzarotti¹***  
 ¹ [PHuSe Lab](https://phuselab.di.unimi.it) - Dipartimento di Informatica, Università degli Studi di Milano  
 
-**Paper** TBA
+**Paper** *Boccignone, G., Cuculo, V., D’Amelio, A., Grossi, G., & Lanzarotti, R. (2020). On gaze deployment to audio-visual cues of social interactions. IEEE Access, 1–25.*
+
+https://ieeexplore.ieee.org/document/9184838
 
 ![simulation](simulation.gif "Model Simulation")
 
@@ -39,5 +41,14 @@ python3 Simulate_model.py
 
 If you use this code or data, please cite the paper:
 ```
-TBA
+@article{Boccignone2020,
+  doi = {10.1109/access.2020.3021211},
+  url = {https://doi.org/10.1109/access.2020.3021211},
+  year = {2020},
+  publisher = {Institute of Electrical and Electronics Engineers ({IEEE})},
+  pages = {1--25},
+  author = {Giuseppe Boccignone and Vittorio Cuculo and Alessandro D{\textquotesingle}Amelio and Giuliano Grossi and Raffaella Lanzarotti},
+  title = {On gaze deployment to audio-visual cues of social interactions},
+  journal = {{IEEE} Access}
+}
 ```
