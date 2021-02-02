@@ -3,7 +3,7 @@ drawnow==0.72.0
 sk_video==1.1.10
 scipy==1.4.1
 pykalman==0.9.5
-tensorflow==2.1.2
+tensorflow==2.4.0
 torch==0.4.0
 numpy==1.18.4
 python_speech_features==0.6
