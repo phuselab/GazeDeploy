@@ -12,6 +12,7 @@ https://ieeexplore.ieee.org/document/9184838
 ### Requirements
 
 ```
+python 3.6
 pip install -r requirements.txt
 ```
 
