@@ -10,7 +10,7 @@ python_speech_features==0.6
 matplotlib==3.1.1
 imageio==2.8.0
 protobuf==3.12.1
-PyYAML==5.3.1
+PyYAML==5.4
 scikit_learn==0.23.1
 scikit-image==0.15.0
 opencv-python==3.4.2.17
